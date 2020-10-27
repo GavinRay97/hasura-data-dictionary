@@ -1,4 +1,4 @@
-import { SchemaVisualizer } from "../../components/visualization"
+import { SchemaVisualizer } from "../../components/fresh-viz"
 
 import {
   FlowChartWithState,
@@ -196,19 +196,15 @@ const testChart = groupedMetadataToChartNodeStructure(
 )
 
 export default function Datagraph() {
-  return (
-    <div>
-      <div className="flex max-h-screen">
-        <FlowChartWithState
-          initialValue={testChart}
-          config={{ smartRouting: false, readonly: true }}
-          Components={{
-            NodeInner: NodeInnerCustom
-          }}
-        />
-      </div>
-
-      <SchemaVisualizer />
-    </div>
-  )
+  return <SchemaVisualizer />
 }
+
+// <div className="flex max-h-screen">
+//         <FlowChartWithState
+//           initialValue={testChart}
+//           config={{ smartRouting: false, readonly: true }}
+//           Components={{
+//             NodeInner: NodeInnerCustom
+//           }}
+//         />
+//       </div>
