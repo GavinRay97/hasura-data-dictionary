@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { SchemaVisualizer } from "../../components/fresh-viz"
-
+import useDimensions from "react-cool-dimensions"
 import {
   FlowChartWithState,
   INodeInnerDefaultProps,
@@ -9,6 +8,7 @@ import {
 
 import { useStoreState } from "../../store"
 import { Table, TableProps } from "../../components/table"
+import { SchemaVisualizer } from "../../components/visualization"
 import { GroupedMetadataAndPostgresTables } from "../../store/utils"
 import { sampleGroupedMetadataAndPostgresTables } from "../../utils/sampleGroupedMetadataResult"
 
@@ -199,17 +199,15 @@ const testChart = groupedMetadataToChartNodeStructure(
 
 export default function Datagraph() {
   const tablesMetadata = useStoreState(store => store.groupedMetadataAndDatabaseTables)
+  const {ref, width, height} = useDimensions()
   const [data, setData] = useState()
 
   async function loadData() {
     if (!tablesMetadata) {
-        console.log('no metadata?')
         return null
     }
     let nodes = Object.entries(tablesMetadata).map(([tableName, value]) =>  ({ ...value, id: tableName }))
-    // console.log('nodes: ', nodes)
     let links = nodes.map((val) =>  {
-      // console.log('val? ', val)
     const arrays = val.array_relationships?.map(rel => ({
         ...rel,
         target: val.id,
@@ -218,19 +216,15 @@ export default function Datagraph() {
     const objects = val.object_relationships?.map(rel => {
       const target = nodes.find(x => x.id === val.id)
       const sourcekey = rel?.using?.foreign_key_constraint_on || rel?.using?.manual_configuration?.remote_table?.name
-      const sourcetable = val.database_table.foreign_keys?.find(fk => fk.column_mapping[sourcekey])
-      const source = nodes.find(x => x.id === sourcetable.ref_table)
+      const sourcenode = val.database_table.foreign_keys?.find(fk => fk.column_mapping[sourcekey])
+      const source = nodes.find(x => x.id === sourcenode.ref_table)
         return {
           ...rel,
           target,
           source
         }
       }) || []
-
-      // console.log('arrays: ', arrays)
-      // console.log('objects: ', objects)
       const all_relationships = arrays.concat(objects)
-      // console.log('all_relationships: ', all_relationships)
       return all_relationships
     }).filter(l => l.length > 0).flat()
     setTimeout(() => setData({ nodes, links }), 500)
@@ -238,20 +232,13 @@ export default function Datagraph() {
 
    useEffect(() => {
       if(tablesMetadata) {
-        console.log('hi from tablesMetadata')
         loadData();
       }
     },[tablesMetadata])
 
-  return <SchemaVisualizer {...data} />
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%"}}>
+      <SchemaVisualizer width={width} height={height} {...data} />
+    </div>
+  )
 }
-
-{/* <div className="flex max-h-screen">
-        <FlowChartWithState
-          initialValue={testChart}
-          config={{ smartRouting: false, readonly: true }}
-          Components={{
-            NodeInner: NodeInnerCustom
-          }}
-        />
-      </div> */}
