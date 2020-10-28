@@ -1,3 +1,6 @@
+import { GroupedMetadataAndPostgresTables } from "../../store/utils"
+import { sampleGroupedMetadataAndPostgresTables } from "../../utils/sampleGroupedMetadataResult"
+
 export interface TableProps {
   headers: Array<{
     key: string
@@ -8,7 +11,7 @@ export interface TableProps {
 
 export function Table(props: TableProps) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" >
       <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
           <div className="overflow-hidden border-b border-gray-200 shadow sm:rounded-lg">
@@ -46,4 +49,30 @@ export function Table(props: TableProps) {
       </div>
     </div>
   )
+}
+
+export function groupedMetadataToDatavizTableProps(
+  metadata: ValueOf<GroupedMetadataAndPostgresTables>
+): TableProps {
+  return {
+    headers: [
+      {
+        key: "column",
+        displayName: "Column"
+      },
+      {
+        key: "type",
+        displayName: "Type"
+      },
+      {
+        key: "comment",
+        displayName: "Comment"
+      }
+    ],
+    columns: metadata.database_table.columns.map(col => ({
+      column: col.column_name,
+      type: col.udt_name,
+      comment: col.column_default
+    }))
+  }
 }

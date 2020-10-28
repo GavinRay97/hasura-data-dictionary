@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react'
 import { SchemaVisualizer } from "../../components/fresh-viz"
 
 import {
@@ -6,6 +7,7 @@ import {
   IChart,
 } from "@mrblenny/react-flow-chart"
 
+import { useStoreState } from "../../store"
 import { Table, TableProps } from "../../components/table"
 import { GroupedMetadataAndPostgresTables } from "../../store/utils"
 import { sampleGroupedMetadataAndPostgresTables } from "../../utils/sampleGroupedMetadataResult"
@@ -196,15 +198,60 @@ const testChart = groupedMetadataToChartNodeStructure(
 )
 
 export default function Datagraph() {
-  return <SchemaVisualizer />
+  const tablesMetadata = useStoreState(store => store.groupedMetadataAndDatabaseTables)
+  const [data, setData] = useState()
+
+  async function loadData() {
+    if (!tablesMetadata) {
+        console.log('no metadata?')
+        return null
+    }
+    let nodes = Object.entries(tablesMetadata).map(([tableName, value]) =>  ({ ...value, id: tableName }))
+    // console.log('nodes: ', nodes)
+    let links = nodes.map((val) =>  {
+      // console.log('val? ', val)
+    const arrays = val.array_relationships?.map(rel => ({
+        ...rel,
+        target: val.id,
+        source: rel.using.foreign_key_constraint_on.table.name
+    })) || []
+    const objects = val.object_relationships?.map(rel => {
+      const target = nodes.find(x => x.id === val.id)
+      const sourcekey = rel?.using?.foreign_key_constraint_on || rel?.using?.manual_configuration?.remote_table?.name
+      const sourcetable = val.database_table.foreign_keys?.find(fk => fk.column_mapping[sourcekey])
+      const source = nodes.find(x => x.id === sourcetable.ref_table)
+        return {
+          ...rel,
+          target,
+          source
+        }
+      }) || []
+
+      // console.log('arrays: ', arrays)
+      // console.log('objects: ', objects)
+      const all_relationships = arrays.concat(objects)
+      // console.log('all_relationships: ', all_relationships)
+      return all_relationships
+    }).filter(l => l.length > 0).flat()
+    setTimeout(() => setData({ nodes, links }), 500)
+  }
+
+   useEffect(() => {
+      if(tablesMetadata) {
+        console.log('hi from tablesMetadata')
+        loadData();
+      }
+    },[tablesMetadata])
+
+  return <SchemaVisualizer {...data} />
 }
 
-// <div className="flex max-h-screen">
-//         <FlowChartWithState
-//           initialValue={testChart}
-//           config={{ smartRouting: false, readonly: true }}
-//           Components={{
-//             NodeInner: NodeInnerCustom
-//           }}
-//         />
-//       </div>
+{/* <div className="flex max-h-screen">
+        <FlowChartWithState
+          initialValue={testChart}
+          config={{ smartRouting: false, readonly: true }}
+          Components={{
+            NodeInner: NodeInnerCustom
+          }}
+        />
+      </div> */}
